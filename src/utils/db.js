@@ -1,11 +1,13 @@
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, GetCommand, PutCommand, UpdateCommand, DeleteCommand, QueryCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 
+const region = process.env.TARGET_AWS_REGION || 'us-east-1';
+
 const client = new DynamoDBClient({
-  region: 'us-east-1'
+  region
 });
 
-console.log('DynamoDB client initialized with region:', 'us-east-1');
+console.log('DynamoDB client initialized with region:', region);
 console.log('LINKS_TABLE environment variable:', process.env.LINKS_TABLE);
 
 const docClient = DynamoDBDocumentClient.from(client);

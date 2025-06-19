@@ -5,7 +5,7 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs20.x
-  region: ${opt:region, env:AWS_REGION, 'us-east-1'}
+  region: ${opt:region, env:TARGET_AWS_REGION, 'us-east-1'}
   iam:
     role:
       statements:
