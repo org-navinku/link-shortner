@@ -42,9 +42,19 @@ provider:
 
 custom:
   stage: ${opt:stage, 'dev'}
+  customDomain:
+    domainName: ${env:CUSTOM_DOMAIN, 'lxop.in'}
+    certificateArn: ${env:CUSTOM_DOMAIN_CERTIFICATE_ARN, ''}
+    basePath: ''
+    stage: ${self:custom.stage}
+    createRoute53Record: true
+    endpointType: 'regional'
+    securityPolicy: tls_1_2
+    apiType: rest
 
 plugins:
   - serverless-dotenv-plugin
+  - serverless-domain-manager
   - serverless-offline
 
 resources:
@@ -110,4 +120,7 @@ functions:
     events:
       - http:
           path: /r/{shortCode}
+          method: get
+      - http:
+          path: /{shortCode}
           method: get

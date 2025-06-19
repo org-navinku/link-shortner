@@ -13,6 +13,7 @@ A zero-maintenance, serverless link shortener built with AWS Lambda, API Gateway
 - Auto-scaling infrastructure
 - Zero maintenance required
 - No user management - simple API-based approach
+- Custom domain support
 
 ## Prerequisites
 
@@ -47,12 +48,23 @@ A zero-maintenance, serverless link shortener built with AWS Lambda, API Gateway
 Create a `.env` file in the root directory with the following variables:
 
 ```
+# Environment (development, production)
 NODE_ENV=development
+
+# Log level (error, warn, info, debug, trace)
+LOG_LEVEL=debug
+
+# DynamoDB table name
+LINKS_TABLE=serverless-link-shortener-dev-links
+
+# Custom domain configuration
+CUSTOM_DOMAIN=your-domain.com
+CUSTOM_DOMAIN_CERTIFICATE_ARN=arn:aws:acm:region:account-id:certificate/certificate-id
 ```
 
 ## API Endpoints
 
-Base URL: https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]
+Base URL: https://[your-domain.com] or https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]
 
 ### Create a Short Link
 
@@ -163,13 +175,48 @@ aws apigateway get-api-keys --name-query "serverless-link-shortener-dev-key" --i
 - CloudWatch Logs are enabled for all Lambda functions
 - API Gateway access logging can be enabled for detailed request tracking
 
+## Custom Domain Configuration
+
+This project supports using a custom domain instead of the default API Gateway URL. Follow these steps to set up a custom domain:
+
+1. **Add domain configuration to your `.env` file**:
+   ```
+   CUSTOM_DOMAIN=your-domain.com
+   CUSTOM_DOMAIN_CERTIFICATE_ARN=
+   ```
+
+2. **Create an SSL certificate in AWS Certificate Manager**:
+   ```bash
+   aws acm request-certificate --domain-name your-domain.com --validation-method DNS --region us-east-1
+   ```
+   Note: For CloudFront distributions, certificates must be in the `us-east-1` region.
+
+3. **Add the certificate ARN to your `.env` file** after creation:
+   ```
+   CUSTOM_DOMAIN_CERTIFICATE_ARN=arn:aws:acm:region:account-id:certificate/certificate-id
+   ```
+
+4. **Validate the certificate** by adding the required DNS records. If your domain is in Route 53, you can use:
+   ```bash
+   aws acm describe-certificate --certificate-arn YOUR_CERTIFICATE_ARN --region us-east-1
+   ```
+   Then add the validation CNAME record to your DNS settings.
+
+5. **Create the custom domain in API Gateway**:
+   ```bash
+   npx serverless create_domain --stage dev
+   ```
+
+6. **Deploy your service**:
+   ```bash
+   npx serverless deploy
+   ```
+
+After deployment, your API will be accessible via your custom domain (e.g., `https://your-domain.com/links`).
+
 ## Local Development
 
-To run the application locally:
+Start the local development server:
 
 ```bash
-npm install
 serverless offline start
-```
-
-
