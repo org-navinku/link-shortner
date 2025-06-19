@@ -1,0 +1,37 @@
+{
+  "name": "serverless-link-shortener",
+  "version": "1.0.0",
+  "description": "A zero-maintenance serverless link shortener",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy --verbose",
+    "deploy:prod": "serverless deploy --stage prod",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.540.0",
+    "@aws-sdk/lib-dynamodb": "^3.540.0",
+    "@aws-sdk/util-dynamodb": "^3.540.0",
+    "aws-lambda": "^1.0.7",
+    "nanoid": "^5.0.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "babel-jest": "^29.7.0",
+    "eslint": "^8.53.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.28.1",
+    "jest": "^29.7.0",
+    "prettier": "^3.0.3",
+    "serverless": "^3.35.0",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-offline": "^13.9.0",
+    "serverless-plugin-warmup": "^8.2.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

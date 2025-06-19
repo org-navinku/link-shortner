@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CreateLinkRequest",
+  "type": "object",
+  "properties": {
+    "originalUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "The original URL to be shortened"
+    },
+    "shortCode": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9_-]+$",
+      "description": "Custom short code for the URL (optional)",
+      "minLength": 3,
+      "maxLength": 20
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiration date for the short URL in ISO 8601 format (optional)"
+    }
+  },
+  "required": ["originalUrl"],
+  "additionalProperties": false
+}

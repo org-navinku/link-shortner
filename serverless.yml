@@ -1,0 +1,113 @@
+service: serverless-link-shortener
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, env:AWS_REGION, 'us-east-1'}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
+            - dynamodb:ConditionCheckItem
+          Resource:
+            - Fn::GetAtt: [LinksTable, Arn]
+            - Fn::Join:
+                - ''
+                - - Fn::GetAtt: [LinksTable, Arn]
+                  - '/index/*'
+  environment:
+    LINKS_TABLE: ${self:service}-${self:custom.stage}-links
+  apiGateway:
+    apiKeys:
+      - name: ${self:service}-${self:custom.stage}-key
+        description: API key for the link shortener service
+    usagePlan:
+      quota:
+        limit: 10000
+        period: MONTH
+      throttle:
+        burstLimit: 200
+        rateLimit: 100
+
+custom:
+  stage: ${opt:stage, 'dev'}
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+resources:
+  Resources:
+    LinksTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:custom.stage}-links
+        AttributeDefinitions:
+          - AttributeName: shortCode
+            AttributeType: S
+        KeySchema:
+          - AttributeName: shortCode
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
+functions:
+
+  createLink:
+    handler: src/handlers/createLink.handler
+    events:
+      - http:
+          path: /links
+          method: post
+          private: true
+          request:
+            schemas:
+              application/json: ${file(src/schemas/create-link.json)}
+
+  getLink:
+    handler: src/handlers/getLink.handler
+    events:
+      - http:
+          path: /{shortCode}
+          method: get
+
+  updateLink:
+    handler: src/handlers/updateLink.handler
+    events:
+      - http:
+          path: /links/{shortCode}
+          method: put
+          private: true
+
+  deleteLink:
+    handler: src/handlers/deleteLink.handler
+    events:
+      - http:
+          path: /links/{shortCode}
+          method: delete
+          private: true
+
+  listLinks:
+    handler: src/handlers/listLinks.handler
+    events:
+      - http:
+          path: /links
+          method: get
+          private: true
+
+  redirect:
+    handler: src/handlers/redirect.handler
+    events:
+      - http:
+          path: /r/{shortCode}
+          method: get
