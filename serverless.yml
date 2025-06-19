@@ -52,6 +52,7 @@ custom:
     securityPolicy: tls_1_2
     apiType: rest
 
+
 plugins:
   - serverless-dotenv-plugin
   - serverless-domain-manager
@@ -73,6 +74,23 @@ resources:
 
 functions:
 
+  # Swagger documentation
+  swagger:
+    handler: src/handlers/swagger.handler
+    events:
+      - http:
+          path: /swagger
+          method: ANY
+          cors: true
+      - http:
+          path: /swagger/{proxy+}
+          method: ANY
+          cors: true
+      - http:
+          path: /swagger.json
+          method: GET
+          cors: true
+
   createLink:
     handler: src/handlers/createLink.handler
     events:
@@ -88,8 +106,9 @@ functions:
     handler: src/handlers/getLink.handler
     events:
       - http:
-          path: /{shortCode}
+          path: /link/{shortCode}
           method: get
+          private: true
 
   updateLink:
     handler: src/handlers/updateLink.handler
@@ -121,6 +140,8 @@ functions:
       - http:
           path: /r/{shortCode}
           method: get
+          cors: true
       - http:
           path: /{shortCode}
           method: get
+          cors: true

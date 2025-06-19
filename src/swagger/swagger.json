@@ -1,0 +1,501 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Serverless Link Shortener API",
+    "description": "A serverless link shortener built with AWS Lambda, API Gateway, and DynamoDB",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://lxop.in",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Links",
+      "description": "Operations related to link management"
+    },
+    {
+      "name": "Redirect",
+      "description": "Operations related to link redirection"
+    }
+  ],
+  "paths": {
+    "/links": {
+      "post": {
+        "summary": "Create a new short link",
+        "tags": ["Links"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The created link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Short code already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "List all links with pagination",
+        "tags": ["Links"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10
+            },
+            "description": "The number of links to return"
+          },
+          {
+            "in": "query",
+            "name": "lastEvaluatedKey",
+            "schema": {
+              "type": "string"
+            },
+            "description": "The last evaluated key for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Link"
+                      }
+                    },
+                    "lastEvaluatedKey": {
+                      "type": "string",
+                      "description": "The last evaluated key for pagination"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/{shortCode}": {
+      "get": {
+        "summary": "Get a link by its short code",
+        "tags": ["Links"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shortCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The short code of the link to get"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Link not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/links/{shortCode}": {
+      "put": {
+        "summary": "Update a link",
+        "tags": ["Links"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shortCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The short code of the link to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Link not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete a link",
+        "tags": ["Links"],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shortCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The short code of the link to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The link was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Link not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/r/{shortCode}": {
+      "get": {
+        "summary": "Redirect to the original URL",
+        "tags": ["Redirect"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "shortCode",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The short code of the link to redirect to"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the original URL",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "The original URL to redirect to"
+              }
+            }
+          },
+          "404": {
+            "description": "Link not found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-api-key"
+      }
+    },
+    "schemas": {
+      "Link": {
+        "type": "object",
+        "properties": {
+          "shortCode": {
+            "type": "string",
+            "description": "The short code of the link"
+          },
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The original URL that the short link redirects to"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The timestamp when the link was created"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The timestamp when the link will expire (optional)"
+          },
+          "clicks": {
+            "type": "integer",
+            "description": "The number of times the link has been clicked"
+          }
+        },
+        "required": ["shortCode", "originalUrl", "createdAt"]
+      },
+      "CreateLinkRequest": {
+        "type": "object",
+        "properties": {
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The original URL to shorten"
+          },
+          "shortCode": {
+            "type": "string",
+            "description": "Optional custom short code (will be generated if not provided)"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Optional expiration date for the link"
+          }
+        },
+        "required": ["originalUrl"]
+      },
+      "UpdateLinkRequest": {
+        "type": "object",
+        "properties": {
+          "originalUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "The new original URL"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "The new expiration date"
+          }
+        },
+        "minProperties": 1
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "code": {
+            "type": "string",
+            "description": "Error code"
+          }
+        },
+        "required": ["message"]
+      },
+      "SuccessResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Success message"
+          },
+          "data": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Link"
+              },
+              {
+                "type": "object"
+              }
+            ],
+            "description": "Response data"
+          }
+        },
+        "required": ["message"]
+      }
+    }
+  }
+}
