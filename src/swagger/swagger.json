@@ -1,13 +1,13 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Serverless Link Shortener API",
-    "description": "A serverless link shortener built with AWS Lambda, API Gateway, and DynamoDB",
+    "title": "Link Shortener",
+    "description": "A link shortener service that allows users to create, manage, and redirect short links.",
     "version": "1.0.0"
   },
   "servers": [
     {
-      "url": "https://lxop.in",
+      "url": "https://shortener.trendintown.com",
       "description": "Production server"
     },
     {

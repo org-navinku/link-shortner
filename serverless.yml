@@ -5,7 +5,7 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: nodejs20.x
-  region: ${opt:region, env:TARGET_AWS_REGION, 'us-east-1'}
+  region: ${opt:region, env:TARGET_AWS_REGION, 'us-east-2'}
   iam:
     role:
       statements:
@@ -41,13 +41,13 @@ provider:
         rateLimit: 100
 
 custom:
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage, 'prod'}
   customDomain:
-    domainName: ${env:CUSTOM_DOMAIN, 'yourdomain.com'}
+    domainName: ${env:CUSTOM_DOMAIN, 'shortener.trendintown.com'}
     certificateArn: ${env:CUSTOM_DOMAIN_CERTIFICATE_ARN, ''}
     basePath: ''
     stage: ${self:custom.stage}
-    createRoute53Record: true
+    createRoute53Record: false
     endpointType: 'regional'
     securityPolicy: tls_1_2
     apiType: rest
@@ -79,15 +79,19 @@ functions:
     handler: src/handlers/swagger.handler
     events:
       - http:
-          path: /swagger
-          method: ANY
-          cors: true
-      - http:
-          path: /swagger/{proxy+}
+          path: /
           method: ANY
           cors: true
       - http:
           path: /swagger.json
+          method: GET
+          cors: true
+      - http:
+          path: /swagger-ui/{proxy+}
+          method: GET
+          cors: true
+      - http:
+          path: /favicon.ico
           method: GET
           cors: true
 
