@@ -37,10 +37,8 @@ A zero-maintenance, serverless link shortener built with AWS Lambda, API Gateway
 4. Deploy to AWS:
    ```bash
    npm run deploy
-   ```
-   For production:
-   ```bash
-   npm run deploy:prod
+   # or
+   npx serverless deploy --stage prod
    ```
 
 ## Environment Variables
@@ -48,16 +46,9 @@ A zero-maintenance, serverless link shortener built with AWS Lambda, API Gateway
 Create a `.env` file in the root directory with the following variables:
 
 ```
-# Environment (development, production)
-NODE_ENV=development
-
-# Log level (error, warn, info, debug, trace)
+NODE_ENV=production
 LOG_LEVEL=debug
-
-# DynamoDB table name
-LINKS_TABLE=serverless-link-shortener-dev-links
-
-# Custom domain configuration
+LINKS_TABLE=serverless-link-shortener-prod-links
 CUSTOM_DOMAIN=your-domain.com
 CUSTOM_DOMAIN_CERTIFICATE_ARN=arn:aws:acm:region:account-id:certificate/certificate-id
 ```
@@ -74,65 +65,25 @@ Request body:
 ```json
 {
   "originalUrl": "https://example.com/very/long/url",
-  "shortCode": "example",
   "expiresAt": "2024-01-01T00:00:00.000Z"
 }
 ```
-
-Curl example:
-```bash
-curl -X POST \
-  'https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]/links' \
-  -H 'Content-Type: application/json' \
-  -H 'x-api-key: [your-api-key]' \
-  -d '{
-    "originalUrl": "https://example.com/very/long/url",
-    "shortCode": "example"
-  }'
 
 ### Get Link Details
 
 **GET** `/{shortCode}`
 
-Curl example:
-```bash
-curl -X GET 'https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]/example'
-```
-
 ### Redirect to Original URL
 
 **GET** `/r/{shortCode}`
-
-Curl example:
-```bash
-curl -L -X GET 'https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]/r/example'
-```
 
 ### Update Link
 
 **PUT** `/links/{shortCode}`
 
-Curl example:
-```bash
-curl -X PUT \
-  'https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]/links/example' \
-  -H 'Content-Type: application/json' \
-  -H 'x-api-key: [your-api-key]' \
-  -d '{
-    "originalUrl": "https://example.com/updated/url"
-  }'
-```
-
 ### Delete Link
 
 **DELETE** `/links/{shortCode}`
-
-Curl example:
-```bash
-curl -X DELETE \
-  'https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]/links/example' \
-  -H 'x-api-key: [your-api-key]'
-```
 
 ### List All Links
 
@@ -142,26 +93,11 @@ Query parameters:
 - `limit`: Number of items per page (default: 10, max: 50)
 - `lastEvaluatedKey`: Pagination token for the next page of results
 
-Curl example:
-```bash
-curl -X GET \
-  'https://[your-api-id].execute-api.[your-region].amazonaws.com/[stage]/links?limit=5' \
-  -H 'x-api-key: [your-api-key]'
-```
-
 ## Authentication
 
-All endpoints except `GET /{shortCode}` and `GET /r/{shortCode}` require authentication. Include your API key in the `x-api-key` header:
+All endpoints except `GET /{shortCode}` and `GET /r/{shortCode}` require authentication. Include your API key in the `x-api-key` header.
 
-```
-x-api-key: [your-api-key]
-```
-
-You can get your API key after deployment from the AWS API Gateway console or by using the AWS CLI:
-
-```bash
-aws apigateway get-api-keys --name-query "serverless-link-shortener-dev-key" --include-values
-```
+You can get your API key after deployment from the AWS API Gateway console or by using the AWS CLI.
 
 ## Security
 
@@ -177,42 +113,37 @@ aws apigateway get-api-keys --name-query "serverless-link-shortener-dev-key" --i
 
 ## Custom Domain Configuration
 
-This project supports using a custom domain instead of the default API Gateway URL. Follow these steps to set up a custom domain:
+This project supports using a custom domain instead of the default API Gateway URL. If you use an external DNS provider (not Route 53):
 
-1. **Add domain configuration to your `.env` file**:
-   ```
-   CUSTOM_DOMAIN=your-domain.com
-   CUSTOM_DOMAIN_CERTIFICATE_ARN=
-   ```
+1. Set `createRoute53Record: false` in `serverless.yml` under `customDomain` (already set).
+2. After running `npx serverless create_domain --stage prod`, manually add the following CNAME records to your DNS provider:
+   - **ACM Certificate Validation:**
+     - Name: `_your-acm-validation-id.your-domain.com.`
+     - Type: `CNAME`
+     - Value: `_your-acm-validation-value.acm-validations.aws.`
+   - **API Gateway Custom Domain:**
+     - Name: `your-domain.com.`
+     - Type: `CNAME`
+     - Value: `your-api-gateway-domain.cloudfront.net.`
+   - (Replace the above placeholders with actual values from ACM and API Gateway outputs.)
+3. Ensure your ACM certificate is in the same region as your API Gateway.
 
-2. **Create an SSL certificate in AWS Certificate Manager**:
-   ```bash
-   aws acm request-certificate --domain-name your-domain.com --validation-method DNS --region us-east-1
-   ```
-   Note: For CloudFront distributions, certificates must be in the `us-east-1` region.
+## API Key Authentication
 
-3. **Add the certificate ARN to your `.env` file** after creation:
-   ```
-   CUSTOM_DOMAIN_CERTIFICATE_ARN=arn:aws:acm:region:account-id:certificate/certificate-id
-   ```
+- After deployment, get your API key from the AWS API Gateway console.
+- Use this key in the `x-api-key` header for all authenticated endpoints.
+- In Swagger UI, click the **Authorize** button and paste your API key.
 
-4. **Validate the certificate** by adding the required DNS records. If your domain is in Route 53, you can use:
-   ```bash
-   aws acm describe-certificate --certificate-arn YOUR_CERTIFICATE_ARN --region us-east-1
-   ```
-   Then add the validation CNAME record to your DNS settings.
+## Troubleshooting
 
-5. **Create the custom domain in API Gateway**:
-   ```bash
-   npx serverless create_domain --stage dev
-   ```
-
-6. **Deploy your service**:
-   ```bash
-   npx serverless deploy
-   ```
-
-After deployment, your API will be accessible via your custom domain (e.g., `https://your-domain.com/links`).
+- **403/500 errors for Swagger UI static assets:**
+  - The handler uses `swagger-ui-dist` to serve static files. Ensure you have run `npm install swagger-ui-dist`.
+  - The `serverless.yml` includes a `{proxy+}` event for `/swagger-ui/{proxy+}` to route static asset requests.
+- **DynamoDB access errors:**
+  - Make sure your `LINKS_TABLE` environment variable matches the deployed stage (e.g., `serverless-link-shortener-prod-links` for production).
+  - The Lambda IAM role must have permissions for the correct table.
+- **Git push errors:**
+  - If you see `non-fast-forward` errors, run `git pull origin main --no-rebase`, resolve any conflicts, then push again.
 
 ## Local Development
 
@@ -220,3 +151,4 @@ Start the local development server:
 
 ```bash
 serverless offline start
+```
